@@ -1,0 +1,93 @@
+import { useEffect, useState, useCallback } from "react";
+import { getProducts } from "@/pages/api/getProducts";
+import { DEFAULT_ITEM_PAGE_SIZE, ITEMS_ORDER_MAP } from "@/constants";
+import useAsync from "@/hooks/useAsync";
+import SectionTitle from "@/components/Section/SectionTitle";
+import Button from "@/components/ui/Button";
+import DropdownWithBtn from "@/components/ui/Dropdown/DropdownWithBtn";
+import SearchField from "@/components/InputField/SearchField";
+import ProductListResults from "./ProductListResults";
+import TotalCountPagination from "@/components/Pagination/TotalCountPagination";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+
+const DEFAULT_ORDER = Object.keys(ITEMS_ORDER_MAP)[0];
+const dropdownMenuItems = Object.keys(ITEMS_ORDER_MAP);
+
+const ProductList = ({ title, pageSize = DEFAULT_ITEM_PAGE_SIZE }) => {
+  const [products, setProducts] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [order, setOrder] = useState(DEFAULT_ORDER);
+  const router = useRouter();
+  const { runAsync: getProductsAsync } = useAsync(getProducts);
+
+  // const [searchParams, setSearchParams] = useSearchParams();
+  // const keyword = searchParams.get("keyword") || "";
+
+  const handleLoad = useCallback(
+    async (options) => {
+      const result = await getProductsAsync(options);
+      if (!result) return;
+
+      setProducts(result.list);
+      setTotalCount(result.totalCount);
+    },
+    [getProductsAsync]
+  );
+
+  const handleDropdownSelect = (selectedOrder) => {
+    setOrder(selectedOrder);
+  };
+
+  useEffect(() => {
+    handleLoad({
+      pageSize,
+      orderBy: ITEMS_ORDER_MAP[order],
+      // keyword,
+    });
+    // }, [pageSize, order, keyword, handleLoad]);
+  }, [pageSize, order, handleLoad]);
+
+  return (
+    <div className="pb-[40px]">
+      <div className="">
+        <SectionTitle title={title} />
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          className=""
+          onClick={() => router.push("/products/addProduct")}
+        >
+          상품 등록하기
+        </Button>
+        <SearchField
+          // keyword={keyword}
+          // onSearch={setSearchParams}
+          className="w-full md:w-[242px] lg:w-[324px]"
+          placeholder="검색할 상품을 입력해주세요"
+        />
+        <DropdownWithBtn
+          menu={dropdownMenuItems}
+          onClickMenu={handleDropdownSelect}
+          defaultSelected={order}
+          iconType="orderIcon"
+        />
+      </div>
+      <ProductListResults
+        products={products}
+        pageSize={pageSize}
+        isEmpty={() => setSearchParams("")}
+      />
+      <TotalCountPagination
+        totalCount={totalCount}
+        pageSize={pageSize}
+        handleLoad={handleLoad}
+        orderStatus={ITEMS_ORDER_MAP[order]}
+        // searchKeyword={keyword}
+      />
+    </div>
+  );
+};
+
+export default ProductList;

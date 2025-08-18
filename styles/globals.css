@@ -79,4 +79,9 @@
   .auth-form-logo img {
     @apply max-w-[198px] md:max-w-[396px];
   }
+
+  /* product list */
+  .product-list-container {
+    @apply;
+  }
 }
